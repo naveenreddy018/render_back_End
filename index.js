@@ -7,6 +7,7 @@ import bodyParser from 'body-parser';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { profile } from 'console';
 
 
 dotenv.config();
@@ -131,8 +132,7 @@ app.post("/register", (req, res) => {
     console.log(users)
   }else{
     users.push({username : username,password : password})
-    res.status(400).json({message : "resgistered sucesfully",username,password})
-
+    res.status(400).json({message : "resgistered successfully",username,password})
   }
   // if (!email) return res.status(400).json({ error: "Email is required" });
 
@@ -167,8 +167,8 @@ app.post("/login", (req, res) => {
   console.log(users)
   
   if (user) {
-    const token1 = jwt.sign({ username: users.username }, secretKey, { expiresIn: "1h" });
-    console.log(token1)
+    const token1 = jwt.sign({ username: users.username }, secretKey, { expiresIn: "7d" });
+    // console.log(token1)
     return res.json({ token1 ,username : users.username ,password : users.password});
   } else {
     return res.status(401).json({ message: 'Invalid credentials' });
@@ -179,9 +179,14 @@ app.post("/login", (req, res) => {
 const verifyToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.status(403).send('Token is required');
+  console.log(token,'hello')
 
   jwt.verify(token, secretKey, (err, decoded) => {
-    if (err) return res.status(403).send('Invalid token');
+    console.log("triigered verify token")
+    if (err) {
+     res.status(403).send('Invalid token')
+      console.log(err)
+    };
     req.user = decoded;
     next();
   });
@@ -189,6 +194,7 @@ const verifyToken = (req, res, next) => {
 
 
 app.get('/profile', verifyToken, (req, res) => {
+  console.log("profile")
   res.json({ message: `Welcome ${req.user.username}` });
 });
 
