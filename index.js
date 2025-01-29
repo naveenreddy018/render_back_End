@@ -157,9 +157,16 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/getotp", (req, res) => {
-  const otp = Math.floor(Math.random() * 1000) + 1000;
-  res.json({ otp });
-});
+  const username = req.body
+
+  if(username){
+    const otp = Math.floor(Math.random() * 1000) + 1000;
+    res.status(200).json({ otp });
+  }else{
+    res.status(400).json("invalid username")
+  }
+}); 
+
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
