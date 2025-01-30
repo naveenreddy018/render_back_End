@@ -129,7 +129,7 @@ app.post("/register", (req, res) => {
   const user = users.find(u => u.username === username && u.password === password)
 
   if(user){
-    res.status(200).json({message : "uername already taken"})
+    res.status(200).json({message : "username already taken"})
     console.log(users)
   }else{
     users.push({username : username,password : password})
