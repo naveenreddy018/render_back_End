@@ -8,6 +8,10 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { profile } from 'console';
+import mongoose from "mongoose";
+// import express from "express";
+// import dotenv from "dotenv";
+
 
 
 dotenv.config();
@@ -77,13 +81,13 @@ const transporter = nodemailer.createTransport({
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash-exp",
+  model: "gemini-1.5-pro",
 });
 const generationConfig = {
   temperature: 1,
   topP: 0.95,
   topK: 40,
-  maxOutputTokens: 8192,
+  maxOutputTokens: 2500,
   responseMimeType: "text/plain",
 };
 
@@ -210,4 +214,52 @@ app.get('/profile', verifyToken, (req, res) => {
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+});
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/chatDB", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "MongoDB connection error:"));
+db.once("open", () => console.log("Connected to MongoDB"));
+
+// Define Schema & Model
+const responseSchema = new mongoose.Schema({
+  response: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+});
+
+const ResponseModel = mongoose.model("Response", responseSchema);
+
+// Store Response API
+app.post("/storeResponse", async (req, res) => {
+  const { response } = req.body;
+
+  if (!response) {
+      return res.status(400).json({ error: "Missing response" });
+  }
+
+  try {
+      const savedResponse = await ResponseModel.create({ response });
+      console.log("Response stored successfully!", response);
+      
+      res.status(200).json({ message: "Response stored successfully", id: savedResponse._id });
+  } catch (error) {
+      console.error("Error storing response:", error);
+      res.status(500).json({ error: "Database Error" });
+  }
+});
+
+// Get Stored Responses API
+app.get("/getResponses", async (req, res) => {
+  try {
+      const responses = await ResponseModel.find().sort({ timestamp: -1 });
+      res.status(200).json(responses);
+  } catch (error) {
+      console.error("Error fetching responses:", error);
+      res.status(500).json({ error: "Database Error" });
+  }
 });
